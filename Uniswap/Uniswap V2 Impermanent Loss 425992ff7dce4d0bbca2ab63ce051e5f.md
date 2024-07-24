@@ -54,5 +54,6 @@ LP拥有的价值为：200 U
     </aside>
     
     ### 用数学模型来计算无常亏损
+    
     图中笔误，实际为UniswapV2
     ![swap.png](images/UniswapV2-ImpermanentLoss.jpeg)
