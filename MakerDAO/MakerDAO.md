@@ -1,10 +1,6 @@
 # MakerDAO
 
----
-
 ## Crypto-backed
-
----
 
 Crypto-backed类型的stablecoin是由其他加密资产（例如ETH）作为支撑的。它们的价格随着底层资产（即抵押物）的价值而波动的。由于ETH的价格可能波动，这些stablecoin需要**超额抵押**来确保价值稳定。这种方法意味着价值$1美元的稳定币需要有至少价值$2美元的加密资产进行抵押。如果ETH的价格下跌，则需要更多的ETH支撑stablecoin。
 
