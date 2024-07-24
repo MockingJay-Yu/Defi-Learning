@@ -12,8 +12,8 @@ x和y代表了一个交易对中各自token的供应量。k是一个不变的常
 
 - **Swap**
 
-![swap.png](images/swap.png)
+![swap](images/swap.png)
 
 - **deposit/withdraw**
 
-![depositOrWithdraw.png](images/depositOrWithdraw.png)
+![depositOrWithdraw](images/depositOrWithdraw.png)
