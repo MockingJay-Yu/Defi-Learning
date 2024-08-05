@@ -1,5 +1,9 @@
 # Uniswap V2 Swap
 
+## Swap数学计算
+
+![UniswapV2-swap2](images/UniswapV2-swap2.png)
+
 
 ## Swap代码解析
 

@@ -5,6 +5,10 @@
 
 预言机的目标用户是其他智能合约，价格消费者可以轻松与Uniswap协议在链上交互获取价格。
 
+## TWAP的数学计算
+
+![UniswapV2-TWAP3](images/UniswapV2-TWAP3.png)
+
 
 ## 代码解析
 

@@ -1,5 +1,10 @@
 # Uniswap V2 protocolFee
 
+## protocolFee的数学计算
+
+![UniswapV2-mintFee5](images/UniswapV2-mintFee5.png)
+
+
 ## mintFee代码解析
 
 ![UniswapV2-mintFee](images/UniswapV2-mintFee.jpg)

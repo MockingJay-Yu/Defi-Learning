@@ -1,5 +1,10 @@
 # Uniswap V2 mint/burn
 
+## mint/burn的数学计算
+
+![UniswapV2-burn2](images/UniswapV2-burn2.png)
+
+
 ## burn代码解析
 
 ![UniswapV2-burn](images/UniswapV2-burn.jpg)
