@@ -24,7 +24,7 @@ AMM(自动化做市商)有许多不同的构建方法，unisawp 使用了**恒�
 
 ### Uniswap V2 的架构
 
-Uniswap 遵循`core-periphery`的设计模式，最核心的逻辑位于 core 中，可选逻辑位于 periphery。这样做的目的是让 core 包含尽可能少的代码，减少核心业务逻辑中出现错误的可能性。用户可以选择通过 periphery 中的合约与 core 中的合约进行交互，也可以自己定制逻辑通过自己的合约直接与 core 中的合约交互。
+Uniswap 使用了`core-periphery`的设计模式，最核心的逻辑位于 core 中，可选逻辑位于 periphery。这样做的目的是让 core 包含尽可能少的代码，减少核心业务逻辑中出现错误的可能性。用户可以选择通过 periphery 中的合约与 core 中的合约进行交互，也可以自己定制逻辑通过自己的合约直接与 core 中的合约交互。
 
 # core
 
