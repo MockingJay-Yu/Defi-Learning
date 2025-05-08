@@ -2,7 +2,7 @@
 
 ## 价格曲线
 
-<img src="images/Uniswap01.png" alt="uniswap 曲线图" width="70%" height="70%">
+<img src="images/Uniswap01.png" alt="uniswap 曲线图" width="50%" height="50%">
 
 _在实际交易中，价格并不是按照$x/y$ 或者 $y/x$来计算，而是围绕着：$x \cdot y = k$，K 值应该保持不变来计算价格。所以其价格变化应该是类似于上面的价格曲线。_
 
@@ -30,49 +30,9 @@ $$
 
 ## 代码解析
 
-![Uniswap02](images/Uniswap02.png)
+<img src="images/Uniswap02.jpg" alt="uniswap源码" width="50%" height="50%">
 
-### 计算转入 token 的数量
-
-```solidity
-uint amount0In = balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0;
-uint amount1In = balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0;
-require(amount0In > 0 || amount1In > 0, 'UniswapV2: INSUFFICIENT_INPUT_AMOUNT');
-```
-
-`_reserve0`和`_reserve1`是池中交易对原本的储备数量，`balance0`和`balance1`分别代表转出`amount0Out`和`amount1Out`后的数量。
-
-对于交易对中两个 token 中的任意一个，都可能发生以下两种情况之一：
-
-1. token 的数量净增长
-2. token 的数量净减少或者没有变化
-
-假设
-
-- reserve 为 10,amountOut 为 0，balance 为 12。这意味着用户存入了两个 token，转入 token 的数量 amountIn 为 2。
-- reserve 为 10,amountOut 为 7，balance 为 3。这意味着用户收到了 7 个 token，转入 token 的数量 amountIn 为 0。
-- reserve 为 10,amountOut 为 7，balance 为 18。这意味着用户使用闪电贷借入了 7 个代币，但多偿还了 8 个代币，转入的 token 数量 amountIn 为 15，相当于用户在归还闪电贷的同时做了一次 swap 操作，所以需要对贷款部分和 swap 部分都要收取手续费。
-
-如果 token 的数量有净增长，amount0In 或 amount1In 将代表用户转入的 token 数量。require 中校验用户至少转入了一种类型的 token。
-
-### 校验 K 值
-
-```solidity
-uint balance0Adjusted = balance0.mul(1000).sub(amount0In.mul(3));
-uint balance1Adjusted = balance1.mul(1000).sub(amount1In.mul(3));
-require(balance0Adjusted.mul(balance1Adjusted) >= uint(_reserve0).mul(_reserve1).mul(1000**2), 'UniswapV2: K');
-```
-
-**费用的计算**
-
-uniswapV2 每次 swap 都会收取 0.3%的手续费，手续费是在转入的 token 中扣除的，新的 K 值计算将不会包含这部分手续费，这就是为什么我们看到`sub(amountXIn.mul(3))`的原因。代码中使用了一种巧妙的方法，用乘法代替了除法，这是因为 solidity 中除法存在舍入截断，结果会不够精确。
-
-**K 值并不是真正恒定的**
-
-尽管 CPAMM 被称为“恒定乘积自动做市商”，但实际上在 swap 中 K 并不是真正意义上恒定不变的。除了手续费导致 K 值固定变大之外，如果有人向池子捐赠了代币改变了 K 值，或者在 swap 过程中转入了过多的 token，协议并不想阻止这种行为，因为它们让 LP 赚了钱。（这与 router 中的一项检查有关，通过 router 与协议交互，将会检查转入和收到的数量，避免交易者的损失）。
-所以在最后 require 中，协议只会检查扣除了手续费 swap 后的 K 值只需要大于或等于原本的 K 值。
-
-### 闪电贷
+### 1. swap 或闪电贷
 
 ```solidity
 if (amount0Out > 0) _safeTransfer(_token0, to, amount0Out); // optimistically transfer tokens
@@ -80,10 +40,36 @@ if (amount1Out > 0) _safeTransfer(_token1, to, amount1Out); // optimistically tr
 if (data.length > 0) IUniswapV2Callee(to).uniswapV2Call(msg.sender, amount0Out, amount1Out, data);
 ```
 
-- swap 函数作为闪电贷使用。只需要传入希望借入的 token 数量`amount0Out`和`amount1Out`,希望转入的地址`to`。
-- `to`合约必须实现`uniswapV2Call`函数，作为回调函数，在`uniswapV2Call`函数中，用户可以自定义一些操作，且必须在最后偿还贷款和费用，否则在计算转入 token 数量阶段或校验 K 值阶段会 revert。还款可以不必是借款数量`amount0Out`和`amount1Out`，只要满足扣除了手续费后的 K 值大于或等于原本的 K 值就可以，这实际上是做了一次 swap 操作。
+- `optimistically transfer tokens`,也就是池子在假设交易会成功的前提下，先进行转账，在后续再验证交易条件。
+- 可以转出一种代币，也可以同时转出两种代币（双边 swap）
+- 也可以作为闪电贷使用，`to`合约必须实现`uniswapV2Call`函数，作为回调函数，在`uniswapV2Call`函数中，用户可以自定义一些操作，且必须在最后偿还贷款和费用，否则后续验证交易条件阶段会 revert。
 
-### 直接与 swap 交互
+### 2. 计算转入 token 的数量
 
-- 如果不使用闪电贷，必须在调用 swap 函数前先向池子转入作为交易的 token。只有智能合约才能这样做。
-- AmountOut 不够灵活，它是作为参数提供的。如果 amountIn 不够，交易将 revert，gas 将被浪费；如果 amountIn 过多，用户可能遭受损失。
+```solidity
+balance0 = IERC20(_token0).balanceOf(address(this));
+balance1 = IERC20(_token1).balanceOf(address(this));
+uint amount0In = balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0;
+uint amount1In = balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0;
+require(amount0In > 0 || amount1In > 0, 'UniswapV2: INSUFFICIENT_INPUT_AMOUNT');
+```
+
+这段代码是计算用户转入了 token 的数量。`_reserve0`和`_reserve1`是池子合约中记录的旧的储备数量，`balance0`和`balance1`是代表池子合约储备的最新余额。`_reserve - amountOut`即原本的数量减去池子转出的数量，也就是池子应该剩下的数量。如果最新的余额大于这个数量，那么说明用户有转入 token，否则 amountIn 等于 0。最后校验了用户至少转入了一种 token。
+
+### 3. 校验 K 值
+
+```solidity
+uint balance0Adjusted = balance0.mul(1000).sub(amount0In.mul(3));
+uint balance1Adjusted = balance1.mul(1000).sub(amount1In.mul(3));
+require(balance0Adjusted.mul(balance1Adjusted) >= uint(_reserve0).mul(_reserve1).mul(1000**2), 'UniswapV2: K');
+```
+
+uniswapV2 每次 swap 都会对`amountIn`收取 0.3%的手续费，恒定乘积公式的计算中不会包含这部分手续费，也就是说用户必须保证 amountIn 在减去了手续费后满足恒定乘积公式。从这里我们可以看到，实际中的 K 并不是不变的，而是因为手续费的增加而增长的。增长的这部分流动性实际就是 LP 的收益。除了手续费，还有其他原因导致的池子流动性增加，比如有用户在 swap 的过程中转入了过多的 token，但协议并不想阻止这种行为，因为它让 LP 赚了钱。（这与 router 中的一项检查有关，通过 router 与协议交互，将会检查转入和收到的数量，避免交易者的损失）。所以在最后 require 中，协议只会检查扣除了手续费 swap 后的 K 值只需要大于或等于原本的 K 值。
+
+上面代码使用了一种巧妙的方法，用乘法代替了除法，这是因为 solidity 中除法存在舍入截断，结果会不够精确。
+
+### 4. 更新池子状态
+
+<img src="images/Uniswap03.jpg" alt="uniswap源码" width="50%" height="50%">
+
+首先检查最新的余额有没有超过池子可以记录的最大值。池子允许记录的最大值是`uint112(-1)`。然后更新了价格累积器（会在后面价格预言机提到）。最后更新了池子的`reserve`。
