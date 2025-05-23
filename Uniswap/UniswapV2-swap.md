@@ -2,8 +2,6 @@
 
 ## 价格曲线
 
-<img src="images/Uniswap01.png" alt="uniswap 曲线图" width="50%" height="50%">
-
 _在实际交易中，价格并不是按照$x/y$ 或者 $y/x$来计算，而是围绕着：$x \cdot y = k$，K 值应该保持不变来计算价格。所以其价格变化应该是类似于上面的价格曲线。_
 
 ### 数学计算
