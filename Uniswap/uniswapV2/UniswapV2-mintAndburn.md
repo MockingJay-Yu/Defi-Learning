@@ -50,7 +50,7 @@ $$
 
 ## mint 代码解析
 
-![UniswapV2-mint](images/UniswapV2-mint.jpg)
+<img src="images/Uniswap04.jpg" alt="uniswapV2 mint源码" width="50%" height="50%">
 
 ### 初始化流动性问题
 
@@ -81,7 +81,7 @@ liquidity = Math.min(amount0.mul(_totalSupply) / _reserve0, amount1.mul(_totalSu
 
 ## burn 代码解析
 
-![UniswapV2-burn](images/UniswapV2-burn.jpg)
+<img src="images/Uniswap05.jpg" alt="uniswapV2 burn源码" width="50%" height="50%">
 
 ### 移除的流动性是通过池合约收到的 LP token 数量来衡量的
 

@@ -28,11 +28,11 @@ $\frac{S_m}{S_t} = \frac{1}{6} - \frac{\sqrt{k_1}}{6 \cdot \sqrt{k_2}}$
 
 ## mintFee 代码解析
 
-![UniswapV2-mintFee](images/UniswapV2-mintFee.jpg)
+<img src="images/Uniswap06.jpg" alt="uniswapV2 mintFee源码" width="50%" height="50%">
 
 `_mintFee`是一个私有函数，让我们看看在哪里会调用到它
 
-![UniswapV2-mintFee2](images/UniswapV2-mintFee2.jpg)
+<img src="images/Uniswap07.jpg" alt="uniswap mintFee源码" width="50%" height="50%">
 
 结合上面的代码，可以发现
 
@@ -42,4 +42,4 @@ $\frac{S_m}{S_t} = \frac{1}{6} - \frac{\sqrt{k_1}}{6 \cdot \sqrt{k_2}}$
 
   让我们考虑一下上面代码片段中的可能性，梳理出一下逻辑：
 
-  ![UniswapV2-mintFee4](images/UniswapV2-mintFee4.jpg)
+<img src="images/Uniswap08.jpg" alt="uniswap mintFee分支" width="50%" height="50%">

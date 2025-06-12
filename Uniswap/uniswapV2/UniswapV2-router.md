@@ -12,7 +12,7 @@
 
 ## swapExactTokensForTokens 和 swapTokensForExactTokens
 
-![UniswapV2-router](images/UniswapV2-router.jpg)
+<img src="images/Uniswap09.jpg" alt="uniswapV2 router源码" width="50%" height="50%">
 
 ### 参数
 
@@ -41,19 +41,19 @@ _swap(amounts, path, to);
 - 然后这两个函数都会将用户的 token 转入到`path`中第一个池子中去。在`UniswapV2Pair`中的`swap`函数要求用户要先把 token 转账到池子合约中去。
 - 最后他们都调用了`_swap`函数。
 
-![UniswapV2-router2](images/UniswapV2-router2.jpg)
+<img src="images/Uniswap10.jpg" alt="uniswapV2 _swap代码解析" width="50%" height="50%">
 
 ## \_addLiquidity
 
 在 mintAndburn 章节，我们提到过流动性安全检查。具体来说，我们希望确保存入的两种 token 数量与池子中的 token 余额比率是相同的，否则，我们获得的 LP Token 数量是存入的数量和池子余额两个比率中最小的那个。但是在 LP 发起添加流动性交易和交易被确认之间，池子中资产会发生变化。router 中提供了`_addLiquidity`函数可以为 LP 提供必要的流动性安全检查。
 
-![UniswapV2-router3](images/UniswapV2-router3.jpg)
+<img src="images/Uniswap11.jpg" alt="uniswapV2 addLiquidity代码解析" width="50%" height="50%">
 
 ## removeLiquidity
 
 移除流动性会燃烧 LP Token，如果 token 比率在 LP 发起移除流动性交易和交易被确认之间发生剧烈变化，那么 LP 将无法取回他们预期的 token 数量。router 中提供了`removeLiquidity`函数可以为 LP 提供必要的安全检查。
 
-![UniswapV2-router4](images/UniswapV2-router4.jpg)
+<img src="images/Uniswap12.jpg" alt="uniswapV2 removeLiquidity代码解析" width="50%" height="50%">
 
 ## 对`Fee on Transfer Tokens`的支持
 

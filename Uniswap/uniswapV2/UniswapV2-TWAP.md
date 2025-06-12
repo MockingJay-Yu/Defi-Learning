@@ -23,7 +23,7 @@ $$
 
 ## 代码解析
 
-![UniswapV2-TWAP](images/UniswapV2-TWAP.jpg)
+<img src="images/Uniswap13.jpg" alt="uniswapV2 _update代码解析" width="50%" height="50%">
 
 **从上面的公式可以看到，我们需要在每次价格变化时，累计持续时间和价格的乘积。那么 uniswap 是怎么做的呢？**
 
