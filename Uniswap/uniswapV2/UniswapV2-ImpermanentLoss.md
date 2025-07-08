@@ -100,7 +100,7 @@ $$
 
 下图为无常损失 $IL(d) = \frac{2 \cdot \sqrt{d}}{1 + d} - 1$ 函数的曲线：
 
-<img src="images/Uniswap18.jpg" alt="uniswapV2 无常损失函数曲线" width="50%" height="50%">
+<img src="images/Uniswap18.jpg" alt="uniswapV2 无常损失函数曲线">
 
 **函数的对称性**
 
@@ -125,7 +125,7 @@ $$
 
 该函数的曲线为下图：
 
-<img src="images/Uniswap19.jpg" alt="uniswapV2 无常损失函数对数曲线" width="50%" height="50%">
+<img src="images/Uniswap19.jpg" alt="uniswapV2 无常损失函数对数曲线">
 
 从上图我们可以清晰的发现无常损失函数的两个特征：
 
