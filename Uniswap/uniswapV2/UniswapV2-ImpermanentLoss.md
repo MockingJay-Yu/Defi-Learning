@@ -83,7 +83,6 @@ v_1 &= y_1 + x_1 \cdot p_1 \\
     &= L \cdot \sqrt{p_1} + \frac{L}{\sqrt{p_1}} \cdot p_1 \\
     &= 2 \cdot L \cdot \sqrt{p_1} \\
     &= 2 \cdot L \cdot \sqrt{p_0 \cdot d}
-
 \end{aligned}
 $$
 
@@ -94,7 +93,6 @@ $$
 IL &= \frac{v_1 - v_{hold}}{v_{hold}} \\
    &= \frac{2 \cdot L \cdot \sqrt{p_0 \cdot d} - (1 + d) \cdot L \cdot \sqrt{p_0}}{(1 + d) \cdot L \cdot \sqrt{p_0}} \\
    &= \frac{2 \cdot \sqrt{d}}{1 + d} - 1
-
 \end{aligned}
 $$
 
