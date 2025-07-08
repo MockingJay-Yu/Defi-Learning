@@ -107,10 +107,10 @@ $$
 $$
 \begin{aligned}
 IL\left(\frac{1}{d}\right)
-&= \frac{2 \cdot \sqrt{\frac{1}{d}}}{1 + \frac{1}{d}} - 1\\[8pt]
-&= \frac{2 \cdot \frac{1}{\sqrt{d}}}{\frac{r + 1}{d}} - 1\\[8pt]
-&= \frac{2}{\sqrt{d}} \cdot \frac{d}{d + 1} - 1\\[8pt]
-&= \frac{2 \sqrt{d}}{d + 1} - 1\\[8pt]
+&= \frac{2 \cdot \sqrt{\frac{1}{d}}}{1 + \frac{1}{d}} - 1\\
+&= \frac{2 \cdot \frac{1}{\sqrt{d}}}{\frac{r + 1}{d}} - 1\\
+&= \frac{2}{\sqrt{d}} \cdot \frac{d}{d + 1} - 1\\
+&= \frac{2 \sqrt{d}}{d + 1} - 1\\
 &= IL(d)
 \end{aligned}
 $$
