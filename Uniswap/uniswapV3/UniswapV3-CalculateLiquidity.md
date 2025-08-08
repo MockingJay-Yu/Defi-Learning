@@ -27,39 +27,51 @@
 1. $p_a<p<p_b$，当前市场价格位于这个价格区间内时，我们可以发现从$p$到$p_a$这段价格曲线的流动性实际上是由资产 $y$ 支撑的，因为价格从$p$到$p_a$消耗的是池子中资产$y$。$p$到$p_b$的流动性是由资产$x$支撑的，价格从$p$到$p_b$消耗的事池子中资产$x$。然后计算$\Delta x$ 和 $\Delta y$：
 
    $$
-   \Delta x = x_p - x_b = \frac{L}{\sqrt{p}} - \frac{L}{\sqrt{p_b}} = L(\frac{1}{\sqrt{p}} - \frac{1}{\sqrt{p_b}}) \\
+   \begin{aligned}
+   \Delta x = x_p - x_b = \frac{L}{\sqrt{p}} - \frac{L}{\sqrt{p_b}} = L(\frac{1}{\sqrt{p}} - \frac{1}{\sqrt{p_b}})\\
    \Delta y = y_p - y_a = L \cdot \sqrt{p} - L \cdot \sqrt{p_a} = L(\sqrt{p} - \sqrt{p_a})
+   \end{aligned}
    $$
 
    反推 L：
 
    $$
+   \begin{aligned}
    L = \frac{\Delta x \cdot \sqrt{p} \cdot \sqrt{p_b}}{\sqrt{p} - \sqrt{p_b}} \\
    L = \frac{\Delta y}{\sqrt{p} - \sqrt{p_a}}
+   \end{aligned}
    $$
 
 2. $p>= p_b$，当前市场价格大于等于这个价格区间的上边界时，此时在这个区间添加的流动性处于非活跃状态，不会参与当前市场的撮合。只有当前市场价格持续下跌至$[p_a,p_b]$区间时才会被激活，从$p_b$到$p_a$这段价格曲线的流动性是由资产$y$支撑的，计算价格从$p_b$下跌到$p_a$消耗池子中资产$y$的数量$\Delta y$：
 
    $$
+   \begin{aligned}
    \Delta y = y_b - y_a = L \cdot \sqrt{p_b} - L \cdot \sqrt{p_a} = L(\sqrt{p_b} - \sqrt{p_a})
+   \end{aligned}
    $$
 
    反推 L：
 
    $$
-    L = \frac{\Delta y}{\sqrt{p_b} - \sqrt{p_a}}
+   \begin{aligned}
+   L = \frac{\Delta y}{\sqrt{p_b} - \sqrt{p_a}}
+   \end{aligned}
    $$
 
 3. $p<= p_a$,当前市场价格小于等于这个价格区间的下边界时，同理，只有市场价格上涨至$[p_a,p_b]$区间内才会被激活，而从$p_a$到$p_b$这段价格曲线的流动性是由资产$x$支撑的，计算价格从$p_a$上涨到$p_b$消耗池子中资产$x$的数量$\Delta x$:
 
    $$
+   \begin{aligned}
    \Delta x = x_a - x_b = \frac{L}{\sqrt{p_a}} - \frac{L}{\sqrt{p_b}} = L(\frac{1}{\sqrt{p_a}} - \frac{1}{\sqrt{p_b}})
+   \end{aligned}
    $$
 
    反推 L：
 
    $$
+   \begin{aligned}
    L = \frac{\Delta x \cdot \sqrt{p_a} \cdot \sqrt{p_b}}{\sqrt{p_a} - \sqrt{p_b}}
+   \end{aligned}
    $$
 
 利用上面的公式，我们就可以计算 LP 添加的 token 的数量对应的流动性了，因为当前市场价格$p$，LP 设定要添加流动性的价格区间$[p_a,p_b]$，要添加的资产数量$\Delta x$,$\Delta y$都是已知的。
