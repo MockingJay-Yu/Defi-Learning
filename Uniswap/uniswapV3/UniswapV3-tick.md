@@ -31,7 +31,7 @@ $P(i)$即为 tick $i$的价格，即 tick 是价格在以 1.0001 为底的对数
 
 - **TickMath**：是一个纯数学库，负责 tick 到 price 的映射，确保价格计算的准确和高效安全
 - **Tick**：管理每个 tick 的状态，包括初始化与清理，流动性变化，跨越 tick 处理等逻辑
-- **TickBitmap**：提供高效的存储方式，记录已初始化的 tick，并支持快速查询
+- **TickBitmap**：提供高效的存储方式，记录或修改 tick 的初始化状态，并支持快速查询
 
 ### TickMath
 
@@ -409,4 +409,111 @@ function getTickAtSqrtRatio(uint160 sqrtPriceX96) internal pure returns (int24 t
     tick = tickLow == tickHi ? tickLow : (getSqrtRatioAtTick(tickHi) <= sqrtPriceX96 ? tickHi : tickLow);
 }
 
+```
+
+### TickBitMap
+
+在 uniswapV3 中，流动性是分布在不同的价格区间，在执行一笔 swap 的时候，不能直接算一个目标 tick，必须从当前 tick 开始，逐区间迭代，累积流动性，直到满足交易数量，中间还需要跳过无流动性的区域。这就需要我们为所有 tick 建立高效的索引。
+
+uniswapV3 的办法是：使用 bitMap 这种数据结构来存储 tick 的状态。具体来说：
+
+- 使用`mapping(int16=> uint256) pulic tickBitmap`来记录所有 tick 的状态
+- 用 tick 的值除以 256（右移 8 位）作为 wordPosition，用 tick 的值对 256 取余作为 bitPosition
+- wordPosition 对应 tickBitmap 中 int16 的值，然后在对应的 uint256 这个字节数组中找到下标为 bitPosition 的位置，如果这个 tick 已经初始化流动性，则该位为 1，反之为 0
+
+<img src="images/UniswapV3-06.png" alt="uniswapV3 bitMap" width="50%" height="50%">
+
+#### flipTick
+
+这个函数非常简单，用来切换 tick 的状态（标记初始化/清空初始化）
+
+```solidity
+function flipTick(
+    mapping(int16 => uint256) storage self,
+    int24 tick,
+    int24 tickSpacing
+) internal {
+    // 确保 tick 落在合法的间隔上（Uniswap V3 只允许 tick 为 tickSpacing 的整数倍）
+    require(tick % tickSpacing == 0);
+
+    // 定位 tick 在 TickBitmap 中的位置：
+    //这里注意：如果直接用 tick 当作索引，那 bitmap 就会超级稀疏，浪费存储。所在在TickBitmap中只存储tick / tickSpacing，每一位都是有效的tick
+    (int16 wordPos, uint8 bitPos) = position(tick / tickSpacing);
+
+    // 构造一个掩码（mask），只有 bitPos 对应的位置是 1，其余位都是 0
+    uint256 mask = 1 << bitPos;
+
+    // 利用按位异或 来“翻转”这一位：
+    // - 如果原来是 0，就变成 1（表示该 tick 第一次被用作区间端点）
+    // - 如果原来是 1，就变成 0（表示该 tick 上的流动性已经清空）
+    // 这就是函数名 flipTick 的由来 —— 切换 tick 的开关状态
+    self[wordPos] ^= mask;
+}
+```
+
+#### nextInitializedTickWithinOneWord
+
+在 swap 的过程中，我们需要找到当前 tick 左边或者右边的下一个有流动性的 tick，使用 bitmap 索引来找到这个 tick，这就是这个函数的作用。
+
+```solidity
+    /// @param self TickBitmap mapping
+    /// @param tick 当前 tick 值
+    /// @param tickSpacing tick 对齐间隔
+    /// @param lte true 表示往左查找 <= tick，false 表示往右查找 > tick
+    /// @return next 找到或临界的下一个 tick
+    /// @return initialized 是否在同一个 word 内找到初始化 tick
+    function nextInitializedTickWithinOneWord(
+        mapping(int16 => uint256) storage self,
+        int24 tick,
+        int24 tickSpacing,
+        bool lte
+    ) internal view returns (int24 next, bool initialized) {
+        // 处理负数向下取整
+        //Solidity 默认：-17 / 10 = -1（向零取整）
+        //正确的逻辑应该是：-17 应该属于 -20 这个格子 → -17/10 = -2 才对。
+        int24 compressed = tick / tickSpacing;
+        if (tick < 0 && tick % tickSpacing != 0) compressed--;
+
+        // 定位 word 和 bit
+        (int16 wordPos, uint8 bitPos) = position(compressed);
+        uint256 bitmap = self[wordPos]; // 取出这一 word 的所有状态
+
+        if (lte) {
+            // 向左查：
+            //构造从[0...bitpos]全是1的掩码
+            uint256 mask = (uint256(1) << (bitPos + 1)) - 1;
+            //做与运算，截取[0...bitpos]
+            uint256 masked = bitmap & mask;
+
+            initialized = masked != 0; // 是否有初始化的 tick
+            if (initialized) {
+                // 找到最高位的 1 的位置
+                uint8 msb = BitMath.mostSignificantBit(masked);
+                // 计算距离，定位真正的 tick
+                int24 delta = int24(bitPos) - int24(msb);
+                next = (compressed - delta) * tickSpacing;
+            } else {
+                // 没找到，返回当前 word 的最左端，方便上层逻辑继续查找
+                next = (compressed - int24(bitPos)) * tickSpacing;
+            }
+        } else {
+            // 向右查
+            //构造从[bitpos+1,255]全是1的掩码
+            uint256 mask = ~((uint256(1) << (bitPos + 1)) - 1);
+            //做与运算，截取[bitpos+1,255]
+            uint256 masked = bitmap & mask;
+
+            initialized = masked != 0;
+            if (initialized) {
+                // 找到最低位的 1 的位置
+                uint8 lsb = BitMath.leastSignificantBit(masked);
+                int24 delta = int24(lsb) - int24(bitPos);
+                next = (compressed + delta) * tickSpacing;
+            } else {
+                // 没找到，返回当前 word 的最右端，方便上层逻辑继续查找
+                next = (compressed + int24(255 - bitPos)) * tickSpacing;
+            }
+        }
+    }
+}
 ```
