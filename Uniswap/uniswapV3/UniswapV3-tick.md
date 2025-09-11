@@ -515,5 +515,183 @@ function flipTick(
             }
         }
     }
-}
+```
+
+### Tick
+
+每个 tick 不仅仅是一个边界点，还记录了该点上与流动性、手续费相关的重要信息。当价格穿越某个 tick 时，系统必须正确更新这些信息，否则会导致流动性和手续费计算出错。下面我们将详细分析`Tick`合约。
+
+#### tick 结构
+
+```solidity
+    struct Info {
+        uint128 liquidityGross;
+        int128 liquidityNet;
+        uint256 feeGrowthOutside0X128;
+        uint256 feeGrowthOutside1X128;
+        int56 tickCumulativeOutside;
+        uint160 secondsPerLiquidityOutsideX128;
+        uint32 secondsOutside;
+        bool initialized;
+    }
+```
+
+- liquidityGross
+
+  liquidityGross 的定义是：**某个 tick 上绑定了多少流动性的引用计数**。
+
+  这听起来好像很难懂，我们可以想象一下 LP 在某一个价格区间[tickLower,tickUpper]添加了流动性，也就是这个 LP 的持有的头寸（以下简称 position），我们需要在[tickLower,tickUpper]对应的两个 tick 上初始化状态。一个 tick 可能是很多个 position 的端点（tickLower 或 tickUpper），当 position 被创建或者移除（LP 添加或移除流动性）的时候，需要知道还有没有别的 position 也把端点绑在这里。liquidityGross 就是这个计数器（以流动性量为单位，而不是 position 个数），用来跟踪**有多少 position 把端点设在这个 tick 上**，从而决定 tick 的初始化状态。
+
+  liquidityGross 变为 0，说明没有任何 position 以此 tick 为端点，可以把此 tick 的状态信息从 storage 清空，并调用 TickBitmap 中的 flipTick 把这一位清掉。合约不可能在每次都去遍历所有的 position 来判断是否还有绑定此 tick 的 position，liquidityGross 提供了 O(1)的判定。
+
+- liquidityNet
+
+  liquidityNet 的定义是：**跨越这个 tick 时，活跃的流动性增加或减少的净变化量**。
+
+  - 如果 tick 是 position 的上界，liquidityNet += position 的流动性
+  - 如果 tick 是 position 的下界，liquidityNet -= position 的流动性
+
+  如何高效的维护区间的流动性？如果直接存储每个 tick 点的流动性，会占用巨量存储，并且添加或删除 position 的 gas 成本会非常昂贵。uniswapV3 用了**差分数组**的思想，用 liquidityNet 来存储跨越区间端点时流动性的变化量，这样避免了存储并维护整条价格曲线上的 tick。
+
+  这样，每次 Mint/Burn 只改两个 tick 的 liquidityNet 值（O(1)），想知道任意价格区间的活跃流动性，只需从左往右累加 liquidityNet，O(n) 扫描即可，无需遍历每个 position。
+
+- feeGrowthOutside0X128/feeGrowthOutside1X128
+
+  这两个字段的定义是：token0/token1 在该 tick 上记录的、相对于当前价格的“区间外手续费累计量”。它的具体方向（左/右）会在价格穿越 tick 时翻转。
+
+  换句话说，它是一个相对字段：
+
+  - 当价格 < tick 时，feeGrowthOutside 表示 tick 右边的手续费累计量
+  - 当价格 ≥ tick 时，feeGrowthOutside 表示 tick 左边的手续费累计量
+
+  而 这种“自动切换”正是通过 `cross`函数中 的 global - oldValue 翻转实现的。
+
+  在 uniswapV3 中，LP 的 position 是分布在各个区间[tickLower, tickUpper]上的，所以必须精确计算出各个区间产生的手续费。如果在区间内逐笔累计，成本太高。uniswapV3 采取这种差分法只需要 O(1)的运算，就能算出某个区间的手续费。计算逻辑会在下面`getFeeGrowthInside`函数中详细分析。
+
+- initialized
+  uniswapV3 并不会存储所有的 tick，只有 LP 在某个 tick 上设定为头寸边界的时候，才有必要管理这个 tick，这将节省大量存储空间。当 initialized 为 ture，说明该 tick 已经被 LP 使用，对应 tickBitmap 中索引位为 1。当 initialized 为 false，说明该 tick 没有绑定任何流动性（liquidityGross = 0），同时 TickBitmap 里相应的 bit 被清除。未来有 LP 再次使用此 tick，重置为 true 即可。
+
+#### getFeeGrowthInside
+
+上面我们知道，feeGrowthOutside0X128/feeGrowthOutside1X128 这两个字段记录了：相对于当前价格的区间外手续费累计量，并在价格跨越此 tick 时更新这个值。如果我们想知道某个区间[tickLower, tickUpper] 累计的手续费 `feeGrowthInside` ，就需要用全局的手续费累计量减去 tickLower 左边区间手续费累计量，再减去 tickUpper 右边区间手续费累计量，可以用下面的公式表示：
+
+$$
+feeGrowthInside = feeGrowthGlobal - feeGrowthBelow - feeGrowthAbove
+$$
+
+看看源码是如何实现：
+
+```solidity
+    function getFeeGrowthInside(
+        mapping(int24 => Tick.Info) storage self, // 所有 tick 的状态
+        int24 tickLower,                          // 区间下界
+        int24 tickUpper,                          // 区间上界
+        int24 tickCurrent,                        // 当前价格所在 tick
+        uint256 feeGrowthGlobal0X128,             // token0 的全局手续费累计
+        uint256 feeGrowthGlobal1X128              // token1 的全局手续费累计
+    ) internal view returns (
+        uint256 feeGrowthInside0X128,             // 区间内 token0 的手续费累计
+        uint256 feeGrowthInside1X128              // 区间内 token1 的手续费累计
+    ) {
+        // 取出下界和上界的 tick 信息
+        Info storage lower = self[tickLower];
+        Info storage upper = self[tickUpper];
+
+        // ---------------------------
+        // 1. 计算区间下界左边的累计（feeGrowthBelow）
+        // ---------------------------
+        uint256 feeGrowthBelow0X128;
+        uint256 feeGrowthBelow1X128;
+        if (tickCurrent >= tickLower) {
+            // 如果当前价格在 tickLower 右边（即区间内部或上方）
+            // 那么 tickLower.feeGrowthOutside 就等于tickLower左边的累计
+            feeGrowthBelow0X128 = lower.feeGrowthOutside0X128;
+            feeGrowthBelow1X128 = lower.feeGrowthOutside1X128;
+        } else {
+            // 如果当前价格在 tickLower 左边
+            // 那么 tickLower.feeGrowthOutside 记录的是tickLower右边的累计
+            // 所以需要用 global - outside 得到tickLower左边的累计
+            feeGrowthBelow0X128 = feeGrowthGlobal0X128 - lower.feeGrowthOutside0X128;
+            feeGrowthBelow1X128 = feeGrowthGlobal1X128 - lower.feeGrowthOutside1X128;
+        }
+
+        // ---------------------------
+        // 2. 计算区间上界右边的累计（feeGrowthAbove）
+        // ---------------------------
+        uint256 feeGrowthAbove0X128;
+        uint256 feeGrowthAbove1X128;
+        if (tickCurrent < tickUpper) {
+            // 如果当前价格在 tickUpper 左边（即区间内部或下方）
+            // 那么 tickUpper.feeGrowthOutside 就等于tickUpper右边的累计
+            feeGrowthAbove0X128 = upper.feeGrowthOutside0X128;
+            feeGrowthAbove1X128 = upper.feeGrowthOutside1X128;
+        } else {
+            // 如果当前价格在 tickUpper 右边
+            // 那么 tickUpper.feeGrowthOutside 记录的是tickUpper左边的累计
+            // 所以需要用 global - outside 得到tickUpper右边的累计
+            feeGrowthAbove0X128 = feeGrowthGlobal0X128 - upper.feeGrowthOutside0X128;
+            feeGrowthAbove1X128 = feeGrowthGlobal1X128 - upper.feeGrowthOutside1X128;
+        }
+
+        // ---------------------------
+        // 3. 用公式算出区间内部的累计
+        // feeGrowthInside = feeGrowthGlobal - feeGrowthBelow - feeGrowthAbove
+        // ---------------------------
+        feeGrowthInside0X128 = feeGrowthGlobal0X128 - feeGrowthBelow0X128 - feeGrowthAbove0X128;
+        feeGrowthInside1X128 = feeGrowthGlobal1X128 - feeGrowthBelow1X128 - feeGrowthAbove1X128;
+    }
+```
+
+#### update
+
+这个函数是`Tick.info`的初始化和更新核心逻辑。
+
+```solidity
+function update(
+        mapping(int24 => Tick.Info) storage self,
+        int24 tick,
+        int24 tickCurrent,
+        int128 liquidityDelta,
+        uint256 feeGrowthGlobal0X128,
+        uint256 feeGrowthGlobal1X128,
+        uint160 secondsPerLiquidityCumulativeX128,
+        int56 tickCumulative,
+        uint32 time,
+        bool upper,
+        uint128 maxLiquidity
+    ) internal returns (bool flipped) {
+        Tick.Info storage info = self[tick];
+
+        // 1️.计算 liquidityGross
+        uint128 liquidityGrossBefore = info.liquidityGross;
+        uint128 liquidityGrossAfter = LiquidityMath.addDelta(liquidityGrossBefore, liquidityDelta);
+
+        require(liquidityGrossAfter <= maxLiquidity, 'LO'); // 防止溢出
+
+        // 2. 如果liquidityGross发生了0和非0之间的变化，需要在 TickBitmap 里 flip 一下）
+        flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
+
+        // 3. 如果这个 tick 是第一次被用（之前的 liquidityGross = 0），需要初始化
+        if (liquidityGrossBefore == 0) {
+            if (tick <= tickCurrent) {
+                // 记录初始化时的feeGrowthGlobal，作为 outside 的快照
+                info.feeGrowthOutside0X128 = feeGrowthGlobal0X128;
+                info.feeGrowthOutside1X128 = feeGrowthGlobal1X128;
+                info.secondsPerLiquidityOutsideX128 = secondsPerLiquidityCumulativeX128;
+                info.tickCumulativeOutside = tickCumulative;
+                info.secondsOutside = time;
+            }
+            info.initialized = true; // 标记 tick 已经激活
+        }
+
+        // 4. 更新 tick 的流动性数据
+        info.liquidityGross = liquidityGrossAfter;
+
+        // 5. 更新 liquidityNet：
+        // - 如果是上界：跨过时要减去流动性
+        // - 如果是下界：跨过时要加上流动性
+        info.liquidityNet = upper
+            ? int256(info.liquidityNet).sub(liquidityDelta).toInt128()
+            : int256(info.liquidityNet).add(liquidityDelta).toInt128();
+    }
 ```
