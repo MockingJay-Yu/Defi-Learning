@@ -21,8 +21,11 @@ $P(i)$即为 tick $i$的价格，即 tick 是价格在以 1.0001 为底的对数
 ### 为什么要这么做？
 
 1. 价格刻度均匀
+
    使用 1.0001 的幂次方有一个很好的性质就是：两个相邻的 tick 之间的差距永远是 0.01%或一个基点，这是金融市场中用来衡量百分比的一个单位。金融市场更看重“价格的百分比变化”，比如价格从 100 到 200 涨了 100%，从 200 到 400 也涨了 100%，虽然差值不同的，但重要的是百分比，也就是涨跌幅。使用 tick 可以让价格在对数刻度下分布均匀。
+
 2. 节省 gas，安全
+
    如果直接操作价格，会涉及大量浮点运算。使用 tick 后，所有价格都映射为整数，价格变化 0.01%就是 tick+1，链上计算更快更安全。
 
 ## 源码解读
@@ -68,7 +71,7 @@ $P(i)$即为 tick $i$的价格，即 tick 是价格在以 1.0001 为底的对数
 >
 > 为什么不能用$\sqrt{p}$的范围反推 tick 的范围？
 >
-> 1. tick 必须是整数，否则无法做到每移动一个 tick，价格变化 0.01%。而$\sqrt{p}$的范围可能无法对应整数 tick，所以$\sqrt{p}必须迁就整数 tick。
+> 1. tick 必须是整数，否则无法做到每移动一个 tick，价格变化 0.01%。而$\sqrt{p}$的范围可能无法对应整数 tick，所以$\sqrt{p}$必须迁就整数 tick。
 > 2. Q64.96 的限制是被动适配的，而非主动定义，使用 Q64.96 的作用是安全在合约中处理浮点运算，而非定义价格范围，不能本末倒置。
 
 #### getSqrtRatioAtTick
@@ -415,7 +418,7 @@ function getTickAtSqrtRatio(uint160 sqrtPriceX96) internal pure returns (int24 t
 
 在 uniswapV3 中，流动性是分布在不同的价格区间，在执行一笔 swap 的时候，不能直接算一个目标 tick，必须从当前 tick 开始，逐区间迭代，累积流动性，直到满足交易数量，中间还需要跳过无流动性的区域。这就需要我们为所有 tick 建立高效的索引。
 
-uniswapV3 的办法是：使用 bitMap 这种数据结构来存储 tick 的状态。具体来说：
+uniswapV3 的办法是：使用 bitmap 这种数据结构来存储 tick 的状态。具体来说：
 
 - 使用`mapping(int16=> uint256) pulic tickBitmap`来记录所有 tick 的状态
 - 用 tick 的值除以 256（右移 8 位）作为 wordPosition，用 tick 的值对 256 取余作为 bitPosition
@@ -519,7 +522,7 @@ function flipTick(
 
 ### Tick
 
-每个 tick 不仅仅是一个边界点，还记录了该点上与流动性、手续费相关的重要信息。当价格穿越某个 tick 时，系统必须正确更新这些信息，否则会导致流动性和手续费计算出错。下面我们将详细分析`Tick`合约。
+每个 tick 不仅仅是一个边界点，还记录了该点上与流动性、手续费相关的重要信息。系统必须正确记录并更新这些信息，否则会导致流动性和手续费计算出错。下面我们将详细分析`Tick`合约。
 
 #### tick 结构
 
@@ -536,13 +539,15 @@ function flipTick(
     }
 ```
 
+在了解这些字段前，我们需要知道一个前提：**Uniswap V3 并不会为价格曲线上每一个 tick 都存储流动性、手续费等信息**。试想一下，如果我们存储所有的 tick，假设 tickSpacing 较小,那么将会占用巨量存储，每次 LP 添加或移除流动性的时，需要更新每一个 tick 上的信息，gas 成本非常高。uniswapV3 采用了**差分数组**的思想，只保存有效的 tick（当此 tick 作为 LP 添加流动性时的上下边界，也就是 tickLower，tickUpper），便可以轻松管理任意区间上流动性新增和退出，快速推导出任意区间的活跃流动性或手续费增长，而不需要存储整条价格曲线上的 tick。
+
 - liquidityGross
 
   liquidityGross 的定义是：**某个 tick 上绑定了多少流动性的引用计数**。
 
   这听起来好像很难懂，我们可以想象一下 LP 在某一个价格区间[tickLower,tickUpper]添加了流动性，也就是这个 LP 的持有的头寸（以下简称 position），我们需要在[tickLower,tickUpper]对应的两个 tick 上初始化状态。一个 tick 可能是很多个 position 的端点（tickLower 或 tickUpper），当 position 被创建或者移除（LP 添加或移除流动性）的时候，需要知道还有没有别的 position 也把端点绑在这里。liquidityGross 就是这个计数器（以流动性量为单位，而不是 position 个数），用来跟踪**有多少 position 把端点设在这个 tick 上**，从而决定 tick 的初始化状态。
 
-  liquidityGross 变为 0，说明没有任何 position 以此 tick 为端点，可以把此 tick 的状态信息从 storage 清空，并调用 TickBitmap 中的 flipTick 把这一位清掉。合约不可能在每次都去遍历所有的 position 来判断是否还有绑定此 tick 的 position，liquidityGross 提供了 O(1)的判定。
+  liquidityGross 变为 0，说明没有任何 position 以此 tick 为端点，可以把此 tick 的状态信息从 storage 清空，并调用 TickBitmap 中的 flipTick 把这一位清掉。合约不可能在去遍历所有的 position 来判断是否还有绑定此 tick 的 position，liquidityGross 提供了 O(1)的判定。
 
 - liquidityNet
 
@@ -550,8 +555,6 @@ function flipTick(
 
   - 如果 tick 是 position 的上界，liquidityNet += position 的流动性
   - 如果 tick 是 position 的下界，liquidityNet -= position 的流动性
-
-  如何高效的维护区间的流动性？如果直接存储每个 tick 点的流动性，会占用巨量存储，并且添加或删除 position 的 gas 成本会非常昂贵。uniswapV3 用了**差分数组**的思想，用 liquidityNet 来存储跨越区间端点时流动性的变化量，这样避免了存储并维护整条价格曲线上的 tick。
 
   这样，每次 Mint/Burn 只改两个 tick 的 liquidityNet 值（O(1)），想知道任意价格区间的活跃流动性，只需从左往右累加 liquidityNet，O(n) 扫描即可，无需遍历每个 position。
 
@@ -566,10 +569,11 @@ function flipTick(
 
   而 这种“自动切换”正是通过 `cross`函数中 的 global - oldValue 翻转实现的。
 
-  在 uniswapV3 中，LP 的 position 是分布在各个区间[tickLower, tickUpper]上的，所以必须精确计算出各个区间产生的手续费。如果在区间内逐笔累计，成本太高。uniswapV3 采取这种差分法只需要 O(1)的运算，就能算出某个区间的手续费。计算逻辑会在下面`getFeeGrowthInside`函数中详细分析。
+  在 uniswapV3 中，LP 的 position 是分布在任意区间[tickLower, tickUpper]上的，这就意味着，各种上下边界互相交叉重叠，如果精确计算出各个区间产生的手续费会非常复杂。uniswapV3 采取这种差分法只需要 O(1)的运算，就能算出任意个区间的手续费。计算逻辑会在下面`getFeeGrowthInside`函数中详细分析。
 
 - initialized
-  uniswapV3 并不会存储所有的 tick，只有 LP 在某个 tick 上设定为头寸边界的时候，才有必要管理这个 tick，这将节省大量存储空间。当 initialized 为 ture，说明该 tick 已经被 LP 使用，对应 tickBitmap 中索引位为 1。当 initialized 为 false，说明该 tick 没有绑定任何流动性（liquidityGross = 0），同时 TickBitmap 里相应的 bit 被清除。未来有 LP 再次使用此 tick，重置为 true 即可。
+
+  当 initialized 为 ture，说明该 tick 已经被 LP 当作 position 的上下边界使用，对应 tickBitmap 中索引位为 1。当 initialized 为 false，说明该 tick 没有绑定任何流动性（liquidityGross = 0），同时 TickBitmap 里相应的 bit 被清除。未来有 LP 再次使用此 tick，重置为 true 即可。
 
 #### getFeeGrowthInside
 
