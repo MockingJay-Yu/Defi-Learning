@@ -33,7 +33,7 @@ $P(i)$即为 tick $i$的价格，即 tick 是价格在以 1.0001 为底的对数
 在理解了 tick 的概念后，开始深入其源码实现，通过学习源码，理解 tick 在池中如何被管理，如何响应价格变化，以及设计背后的技术考虑，为后面的流动性计算和 swap 逻辑奠定基础。这里主要学习三个关于 tick 的核心模块的源码：
 
 - **TickMath**：是一个纯数学库，负责 tick 到 price 的映射，确保价格计算的准确和高效安全
-- **Tick**：管理每个 tick 的状态，包括初始化与清理，流动性变化，跨越 tick 处理等逻辑
+- **Tick**：管理每个 tick 的状态，包括初始化与清理，tick 上的流动性变化，手续费累计，跨越 tick 处理等逻辑
 - **TickBitmap**：提供高效的存储方式，记录或修改 tick 的初始化状态，并支持快速查询
 
 ### TickMath
@@ -416,7 +416,7 @@ function getTickAtSqrtRatio(uint160 sqrtPriceX96) internal pure returns (int24 t
 
 ### TickBitMap
 
-在 uniswapV3 中，流动性是分布在不同的价格区间，在执行一笔 swap 的时候，不能直接算一个目标 tick，必须从当前 tick 开始，逐区间迭代，累积流动性，直到满足交易数量，中间还需要跳过无流动性的区域。这就需要我们为所有 tick 建立高效的索引。
+在 uniswapV3 中，流动性是分布在不同的价格区间，执行 swap 时，价格必须从当前 tick 出发，逐区间迭代，累积流动性，直到满足交易数量，中间还需要跳过无流动性的区域。这就需要我们为所有 tick 建立高效的索引。
 
 uniswapV3 的办法是：使用 bitmap 这种数据结构来存储 tick 的状态。具体来说：
 
@@ -425,6 +425,12 @@ uniswapV3 的办法是：使用 bitmap 这种数据结构来存储 tick 的状�
 - wordPosition 对应 tickBitmap 中 int16 的值，然后在对应的 uint256 这个字节数组中找到下标为 bitPosition 的位置，如果这个 tick 已经初始化流动性，则该位为 1，反之为 0
 
 <img src="images/UniswapV3-06.png" alt="uniswapV3 bitMap" width="50%" height="50%">
+
+> 💡 **PS：**
+> 这里说的 tick 初始化流动性，指的是**该 tick 被用作流动性区间边界**，也就是 LP 在提供流动性时选择的区间端点 tickLower，tickUpper。这么做的原因有两点：
+>
+> 1. 所有可能的 tick 的范围非常大 $[-887272,887272]$，大多数 tick 根本不会用到，不可能每个 tick 都维护一份数据
+> 2. 那么就需要存有效的 tick，哪些是有效的？我们知道，LP 是可以任意设置 tickLower，tickUpper 的，意味着 LP 的区间是交叉重叠的，那么该怎么计算每个 tick 区间的流动性呢？uniswapV3 使用了差分数组的思想，只存储作为 tickLower，tickUpper 的 tick，在跨越 tick 边界时，累加差分，就可以轻松计算任意 tick 区间的流动性，TickBitmap 记录哪些 tick 已初始化，作为索引快速定位到下一个“差分点”。
 
 #### flipTick
 
@@ -522,7 +528,7 @@ function flipTick(
 
 ### Tick
 
-每个 tick 不仅仅是一个边界点，还记录了该点上与流动性、手续费相关的重要信息。系统必须正确记录并更新这些信息，否则会导致流动性和手续费计算出错。下面我们将详细分析`Tick`合约。
+上面我们学习了 uniswapV3 是怎么建立已初始化 的 tick 索引，那么这些 tick 是如何记录流动性、手续费相关的重要信息的呢？下面我们将详细分析`Tick`合约。
 
 #### tick 结构
 
@@ -539,7 +545,7 @@ function flipTick(
     }
 ```
 
-在了解这些字段前，我们需要知道一个前提：**Uniswap V3 并不会为价格曲线上每一个 tick 都存储流动性、手续费等信息**。试想一下，如果我们存储所有的 tick，假设 tickSpacing 较小,那么将会占用巨量存储，每次 LP 添加或移除流动性的时，需要更新每一个 tick 上的信息，gas 成本非常高。uniswapV3 采用了**差分数组**的思想，只保存有效的 tick（当此 tick 作为 LP 添加流动性时的上下边界，也就是 tickLower，tickUpper），便可以轻松管理任意区间上流动性新增和退出，快速推导出任意区间的活跃流动性或手续费增长，而不需要存储整条价格曲线上的 tick。
+在了解这些字段前，我们还需要重提一下：**Uniswap V3 并不会为价格曲线上每一个 tick 都存储流动性、手续费等信息**。试想一下，如果我们存储所有的 tick，假设 tickSpacing 较小,那么将会占用巨量存储，每次 LP 添加或移除流动性的时，需要更新每一个 tick 上的信息，gas 成本非常高。uniswapV3 采用了**差分数组**的思想，只保存有效的 tick（当此 tick 作为 LP 添加流动性时的上下边界，也就是 tickLower，tickUpper），便可以轻松管理任意区间上流动性新增和退出，快速推导出任意区间的活跃流动性，而不需要存储整条价格曲线上的 tick。
 
 - liquidityGross
 
@@ -551,7 +557,7 @@ function flipTick(
 
 - liquidityNet
 
-  liquidityNet 的定义是：**跨越这个 tick 时，活跃的流动性增加或减少的净变化量**。
+  liquidityNet 的定义是：**跨越这个 tick 时，活跃的流动性增加或减少的净变化量**
 
   - 如果 tick 是 position 的上界，liquidityNet += position 的流动性
   - 如果 tick 是 position 的下界，liquidityNet -= position 的流动性
@@ -560,7 +566,7 @@ function flipTick(
 
 - feeGrowthOutside0X128/feeGrowthOutside1X128
 
-  这两个字段的定义是：token0/token1 在该 tick 上记录的、相对于当前价格的“区间外手续费累计量”。它的具体方向（左/右）会在价格穿越 tick 时翻转。
+  这两个字段的定义是：**token0/token1 在该 tick 上记录的、相对于当前价格的“区间外手续费累计量”（这里并不是绝对的手续费数量，而是单位流动性累计获得的手续费，fee per liquidity）。它的具体方向（左/右）会在价格穿越 tick 时翻转**
 
   换句话说，它是一个相对字段：
 
@@ -569,7 +575,7 @@ function flipTick(
 
   而 这种“自动切换”正是通过 `cross`函数中 的 global - oldValue 翻转实现的。
 
-  在 uniswapV3 中，LP 的 position 是分布在任意区间[tickLower, tickUpper]上的，这就意味着，各种上下边界互相交叉重叠，如果精确计算出各个区间产生的手续费会非常复杂。uniswapV3 采取这种差分法只需要 O(1)的运算，就能算出任意个区间的手续费。计算逻辑会在下面`getFeeGrowthInside`函数中详细分析。
+  在 uniswapV3 中，LP 的 position 是分布在任意区间[tickLower, tickUpper]上的，这就意味着，各种上下边界互相交叉重叠，如果精确计算出各个区间产生的手续费会非常复杂。uniswapV3 采取这种方法只需要 O(1)的运算，就能算出任意个区间的手续费。计算逻辑会在下面`getFeeGrowthInside`函数中详细分析。
 
 - initialized
 
