@@ -67,10 +67,8 @@ $$
 那么我们该怎么计算某个价格区间需要的虚拟流动性呢？这就需要 下面的公式：
 
 $$
-\begin{aligned}
 y = L \cdot \sqrt{P}\\
 x = \frac{L}{\sqrt{P}}
-\begin{aligned}
 $$
 
 代入得：
