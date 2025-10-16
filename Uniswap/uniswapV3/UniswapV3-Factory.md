@@ -17,7 +17,7 @@
 
 2. feeAmountTickSpacing
 
-   - 记录手续费档位对应的 `tickSpacing`，和 V2 不同，在 V3 中一个交易对可以有多个手续费率，这里是不同手续费率对应的最小价格单位间隔，比如：
+   - 和 V2 不同，在 V3 中一个交易对可以有多个手续费率，这里记录了不同手续费率 和 最小价格单位间隔 的映射，比如：
 
      0.05% → tickSpacing = 10
 
@@ -27,7 +27,7 @@
 
 3. getPool
 
-   - 记录 (token0, token1, fee) → Pool 的映射，确保同一交易对在一种手续费率下只有一个池子
+   - 记录 (token0, token1, fee) → Pool 地址 的映射，确保同一交易对在一种手续费率下只有一个池子
    - 外部可以通过`getPool(tokenA, tokenB, fee)`快速找到对应的池子地址
 
 ## Constructor
