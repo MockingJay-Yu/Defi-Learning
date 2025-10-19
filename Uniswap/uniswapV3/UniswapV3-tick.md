@@ -252,13 +252,13 @@ n 就是 $log_2(x)$ 的整数部分， $log_2(m)$ 是 $log_2(x)$ 的小数部分
 
         对于任意 m，先确定它落在哪两个相邻的预计算点之间，快速锁定相邻的两个预计算点（记为 a 和 b，对应的 log2 值记为 logA 和 logB）
 
-      - 计算$log_2(m)$ 近似值
+      - 计算 $log_2(m)$ 近似值
 
         因为 $log_2(m)$ 在 [1, 2) 区间内是一条曲线，但在很小的区间内(比如 a 到 b 仅差 0.0625)，可以近似的看作一条直线。$log_2(m)$ 的近似值为：
 
-        $$
-        log_2(m) \approx log_A + \frac{m - a}{b-a} \cdot (log_B - log_A)
-        $$
+$$
+log_2(m) \approx log_A + \frac{m - a}{b-a} \cdot (log_B - log_A)
+$$
 
         - $m-a$：m 到左锚点 a 的距离
         - $b-a$：两个锚点之间的总距离（uniswapV3 中固定位 0，0625）
