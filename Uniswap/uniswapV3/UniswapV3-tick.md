@@ -442,7 +442,7 @@ uniswapV3 的办法是：使用 bitmap 这种数据结构来存储 tick 的状�
 - 用 tick 的值除以 256（右移 8 位）作为 wordPosition，用 tick 的值对 256 取余作为 bitPosition
 - wordPosition 对应 tickBitmap 中 int16 的值，然后在对应的 uint256 这个字节数组中找到下标为 bitPosition 的位置，如果这个 tick 已经初始化流动性，则该位为 1，反之为 0
 
-<img src="images/UniswapV3-06.png" alt="uniswapV3 bitMap" width="50%" height="50%">
+<img src="images/uniswapV3-06.png" alt="uniswapV3 bitMap" width="50%" height="50%">
 
 > 💡 **PS：**
 > 这里说的 tick 初始化流动性，指的是**该 tick 被用作流动性区间边界**，也就是 LP 在提供流动性时选择的区间端点 tickLower，tickUpper。这么做的原因有两点：
