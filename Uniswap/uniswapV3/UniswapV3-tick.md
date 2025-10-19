@@ -100,7 +100,7 @@ $$
 
 _快速幂思想_
 
-假设要计算 $a^n$ ,指数的二进制表示：$n = b_k b_{k-1} \dots b_1 b_0$ ，每一位 $b_i = 0$ 或 1，则：
+假设要计算 $a^n$ ,指数的二进制表示： $n = b_k b_{k-1} \dots b_1 b_0$ ，每一位 $b_i = 0$ 或 1，则：
 
 $$
 a^n = a^{b_0 \cdot 2^0} \cdot a^{b_1 \cdot 2^1} \cdot \dots \cdot a^{b_k \cdot 2^k}
