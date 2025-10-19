@@ -185,7 +185,7 @@ $$
 \text{tick} = 2 \cdot \log_{1.0001}\left(\frac{\text{sqrtPriceX96}}{2^{96}}\right)
 $$
 
-这个公式中计算的难点是$log_{1.0001}$，因为在 EVM 中不支持对数运算和浮点数。我们知道，二进制表示是基于 2 的整数幂次方，$log_2(x)$可以直接和二进制匹配。所以 UniswapV3 的解决方案是：通过换底公式，将上面的公式转换成计算$log_2(x)$，用 MSB 确定$log_2(x)$的整数部分，移位后二分法逼近算出小数部分。
+这个公式中计算的难点是 $log_{1.0001}$ ，因为在 EVM 中不支持对数运算和浮点数。我们知道，二进制表示是基于 2 的整数幂次方，$log_2(x)$ 可以直接和二进制匹配。所以 UniswapV3 的解决方案是：通过换底公式，将上面的公式转换成计算 $log_2(x)$ ，用 MSB 确定 $log_2(x)$ 的整数部分，移位后二分法逼近算出小数部分。
 
 _换底公式转换_
 
@@ -195,7 +195,7 @@ $$
 log_a b = \frac{\log_c b}{\log_c a}
 $$
 
-将$log_{1.0001}$转换成$log_2$，则有：
+将 $log_{1.0001}$ 转换成 $log_2$ ，则有：
 
 $$
 log_{1.0001} \left(\frac{\text{sqrtPriceX96}}{2^{96}}\right) = \frac{\log_2 \left(\frac{\text{sqrtPriceX96}}{2^{96}}\right)}{\log_2 1.0001}
@@ -213,7 +213,7 @@ $$
 \text{tick} = \frac{2 \cdot \left( \log_2 (\text{sqrtPriceX96}) - 96 \right)}{\log_2 1.0001}
 $$
 
-观察这个公式，$log_2 1.0001$是一个定值，可以预计算。重点在如何处理 $log_2 (\text{sqrtPriceX96})$。
+观察这个公式， $log_2 1.0001$ 是一个定值，可以预计算。重点在如何处理 $log_2 (\text{sqrtPriceX96})$。
 
 _处理 log2 运算_
 
