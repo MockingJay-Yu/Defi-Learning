@@ -62,7 +62,7 @@ $$
 
 3. **$P<= P_{lower}$**
 
-   当前市场价格小于等于这个价格区间的下边界时，同理，只有市场价格上涨至$[P_{lower},P_{upper}]$区间内才会被激活，而从$P_{lower}$到$P_{upper}$这段价格曲线的流动性是由资产 x 支撑的，计算价格从$P_{lower}$上涨到$P_{upper}$消耗池子中资产 x 的数量$\Delta x$:
+   当前市场价格小于等于这个价格区间的下边界时，同理，只有市场价格上涨至 $[P_{lower},P_{upper}]$ 区间内才会被激活，而从 $P_{lower}$ 到 $P_{upper}$ 这段价格曲线的流动性是由资产 x 支撑的，计算价格从 $P_{lower}$ 上涨到 $P_{upper}$ 消耗池子中资产 x 的数量 $\Delta x$ :
 
 $$
 \Delta x = x_{lower} - x_{upper} = \frac{L}{\sqrt{P_{lower}}} - \frac{L}{\sqrt{P_{upper}}} = L(\frac{1}{\sqrt{P_{lower}}} - \frac{1}{\sqrt{P_{upper}}})
