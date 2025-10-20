@@ -99,7 +99,8 @@ struct Info {
 
 - feeGrowthInside0LastX128/feeGrowthInside1LastX128
 
-  这两个字段的定义是：距离上次操作时此 position 已经累计的“每单位流动性产生的累计手续费”，所以如果要计算这次操作期间 LP 应得多少手续费，只需要：$(feeGrowthInsideNow - feeGrowthInsideLast) * liquidity$
+  这两个字段的定义是：距离上次操作时此 position 已经累计的“每单位流动性产生的累计手续费”，所以如果要计算这次操作期间 LP 应得多少手续费，只需要：
+  $(feeGrowthInsideNow - feeGrowthInsideLast) * liquidity$
 
 - tokensOwed0/tokensOwed1
 
