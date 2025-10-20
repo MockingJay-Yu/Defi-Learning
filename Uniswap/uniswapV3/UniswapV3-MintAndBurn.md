@@ -48,7 +48,7 @@ $$
 
 2. **$P>= P_{upper}$**
 
-   当前市场价格大于等于这个价格区间的上边界时，此时在这个区间添加的流动性处于非活跃状态，不会参与当前市场的撮合。只有当前市场价格持续下跌至 $[P_{upper} ,P_{lower}]$区间时才会被激活，从 $P_{upper}$ 到$ P*{lower}$ 这段价格曲线的流动性是由资产 y 支撑的，计算价格从 $P*{upper}$ 下跌到 $P_{lower}$ 消耗池子中资产 y 的数量$\Delta y$ ：
+   当前市场价格大于等于这个价格区间的上边界时，此时在这个区间添加的流动性处于非活跃状态，不会参与当前市场的撮合。只有当前市场价格持续下跌至 $[P_{upper} ,P_{lower}]$区间时才会被激活，从 $P_{upper}$ 到 $P_{lower}$ 这段价格曲线的流动性是由资产 y 支撑的，计算价格从 $P_{upper}$ 下跌到 $P_{lower}$ 消耗池子中资产 y 的数量 $\Delta y$ ：
 
 $$
  \Delta y = y_{upper} - y_{lower} = L \cdot \sqrt{P_{upper}} - L \cdot \sqrt{P_{lower}} = L(\sqrt{P_{upper}} - \sqrt{P_{lower}})
