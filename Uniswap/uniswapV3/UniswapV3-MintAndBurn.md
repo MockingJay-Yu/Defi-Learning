@@ -26,7 +26,7 @@
 
 1. **$P_{lower}<P<P_{upper}$**
 
-   当前市场价格位于这个价格区间内时，我们可以发现从$P$到$P_{lower}$这段价格曲线的流动性实际上是由资产 y 支撑的，因为价格从$P$到$P_{lower}$消耗的是池子中资产 y。$P$到$p_{upper}$的流动性是由资产 x 支撑的，价格从$P$到$P_{upper}$消耗的是池子中资产 x。然后计算$\Delta x$ 和 $\Delta y$：
+   当前市场价格位于这个价格区间内时，我们可以发现从 $P$ 到 $P_{lower}$ 这段价格曲线的流动性实际上是由资产 y 支撑的，因为价格从 $P$ 到 $P_{lower}$ 消耗的是池子中资产 y。 $P$ 到 $p_{upper}$ 的流动性是由资产 x 支撑的，价格从 $P$ 到 $P_{upper} $消耗的是池子中资产 x。然后计算 $\Delta x$ 和 $\Delta y$ ：
 
 $$
 \Delta x = x_p - x_{upper} = \frac{L}{\sqrt{P}} - \frac{L}{\sqrt{P_{upper}}} = L(\frac{1}{\sqrt{P}} - \frac{1}{\sqrt{P_{upper}}})\\
