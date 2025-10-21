@@ -21,7 +21,7 @@
 
 <img src="images/sadkmska.png" alt="uniswapV3 swap模型" width="50%" height="50%">
 
-因为 V3 的 swap，是一个逐区间推进的过程，每一段 tick 区间内的数学模型都是一样的，所以我们分析 swap 的数学模型的前提是在同一个区间内 swap。假设存在交易对 x,y，价格区间是$[P_{lower},P_{upper}]$，此区间的全局流动性为$L$。
+因为 V3 的 swap，是一个逐区间推进的过程，每一段 tick 区间内的数学模型都是一样的，所以我们分析 swap 的数学模型的前提是在同一个区间内 swap。假设存在交易对 (x,y)，价格区间是 $[P_{lower},P_{upper}]$ ，此区间的全局流动性为 $L$ 。
 
 1. 卖出 y，得到 x
 
