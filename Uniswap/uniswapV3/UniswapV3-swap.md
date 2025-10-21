@@ -25,25 +25,25 @@
 
 1. 卖出 y，得到 x
 
-   当前市场价格为 $P_b$，我们卖出$\Delta x$数量的 x token，计算我们该得到多少数量的 y token？
+   当前市场价格为 $P_b$，我们卖出 $\Delta x$ 数量的 x token，计算我们该得到多少数量的 y token？
 
-   假设我们卖出$\Delta x$数量的 x token，导致市场价格上涨至 $P_a$，则有：
+   假设我们卖出 $\Delta x$ 数量的 x token，导致市场价格上涨至 $P_a$ ，则有：
 
-   $$
-   \Delta x = x_b - x_a = L(\frac{1}{\sqrt{P_b}} - \frac{1}{\sqrt{P_a}})
-   $$
+$$
+\Delta x = x_b - x_a = L(\frac{1}{\sqrt{P_b}} - \frac{1}{\sqrt{P_a}})
+$$
 
-   已知：$\Delta x$，$P_b$，$L$，求$\sqrt{P_a}$:
+已知： $\Delta x$ ，$P_b$ ，$L$ ，求 $\sqrt{P_a}$ :
 
-   $$
-   \sqrt{P_a} = \frac{1}{ \frac{1}{\sqrt{P_b}} - \frac{\Delta x}{L} } = \frac{\sqrt{P_b}}{1 - \frac{\Delta x}{L} \sqrt{P_b}}
-   $$
+$$
+\sqrt{P_a} = \frac{1}{ \frac{1}{\sqrt{P_b}} - \frac{\Delta x}{L} } = \frac{\sqrt{P_b}}{1 - \frac{\Delta x}{L} \sqrt{P_b}}
+$$
 
-   得到$\sqrt{P_a}$, 则可以计算我们得到的 y token 的数量 $\Delta y$：
+得到 $\sqrt{P_a}$ , 则可以计算我们得到的 y token 的数量 $\Delta y$ ：
 
-   $$
-   \Delta y = y_a - y_b = L(\sqrt{P_a} - \sqrt{P_b})
-   $$
+$$
+\Delta y = y_a - y_b = L(\sqrt{P_a} - \sqrt{P_b})
+$$
 
 2. 卖出 x，得到 y
 
