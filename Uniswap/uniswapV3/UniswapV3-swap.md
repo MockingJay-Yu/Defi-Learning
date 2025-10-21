@@ -47,25 +47,25 @@ $$
 
 2. 卖出 x，得到 y
 
-   当前市场价格为 $P_a$，我们卖出$\Delta y$ 数量的 y token，计算我们该得到多少数量的 x token？
+当前市场价格为 $P_a$ ，我们卖出 $\Delta y$ 数量的 y token，计算我们该得到多少数量的 x token？
 
-   假设我们卖出$\Delta y$ 数量的 y token，导致市场价格下降至$P_b$，则有：
+假设我们卖出 $\Delta y$ 数量的 y token，导致市场价格下降至 $P_b$ ，则有：
 
-   $$
-   \Delta y = y_a - y_b = L(\sqrt{P_a} - \sqrt{P_b})
-   $$
+$$
+\Delta y = y_a - y_b = L(\sqrt{P_a} - \sqrt{P_b})
+$$
 
-   已知：$\Delta y$，$P_a$，$L$，求 $\sqrt{P_b}$：
+已知： $\Delta y$ ， $P_a$ ， $L$ ，求 $\sqrt{P_b}$ ：
 
-   $$
-   \sqrt{P_b} = \sqrt{P_a} - \frac{\Delta y}{L}
-   $$
+$$
+\sqrt{P_b} = \sqrt{P_a} - \frac{\Delta y}{L}
+$$
 
-   得到$\sqrt{P_b}$，则可以计算我们得到的 x token 的数量 $\Delta x$：
+得到 $\sqrt{P_b}$ ，则可以计算我们得到的 x token 的数量 $\Delta x$ ：
 
-   $$
-   \Delta x = x_b - x_a = L(\frac{1}{\sqrt{P_b}} - \frac{1}{\sqrt{P_a}})
-   $$
+$$
+\Delta x = x_b - x_a = L(\frac{1}{\sqrt{P_b}} - \frac{1}{\sqrt{P_a}})
+$$
 
 上面就是 V3 的 swap 数学模型，不管是兑换 x 还是 y，我们总是先推算交易者给池子添加 token 后，价格会变化到哪里？然后再根据价格反推出应该支付给交易者多少 token。如果价格变化后跨越了当前 tick，那么在下一 tick 区间重复同样的步骤，直到 swap 完成。
 
