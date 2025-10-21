@@ -33,13 +33,13 @@ $$
 \Delta x = x_b - x_a = L(\frac{1}{\sqrt{P_b}} - \frac{1}{\sqrt{P_a}})
 $$
 
-已知： $\Delta x$ ， $P_b$ ， $L$ ，求 $\sqrt{P_a}$ :
+    已知： $\Delta x$ ， $P_b$ ， $L$ ，求 $\sqrt{P_a}$ :
 
 $$
 \sqrt{P_a} = \frac{1}{ \frac{1}{\sqrt{P_b}} - \frac{\Delta x}{L} } = \frac{\sqrt{P_b}}{1 - \frac{\Delta x}{L} \sqrt{P_b}}
 $$
 
-得到 $\sqrt{P_a}$ , 则可以计算我们得到的 y token 的数量 $\Delta y$ ：
+    得到 $\sqrt{P_a}$ , 则可以计算我们得到的 y token 的数量 $\Delta y$ ：
 
 $$
 \Delta y = y_a - y_b = L(\sqrt{P_a} - \sqrt{P_b})
