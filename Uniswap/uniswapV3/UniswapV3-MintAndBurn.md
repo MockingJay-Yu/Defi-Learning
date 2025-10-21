@@ -422,7 +422,7 @@ $$
 \Delta x = L(\frac{1}{\sqrt{P_{lower}}} - \frac{1}{\sqrt{P_{upper}}})
 $$
 
-    当市场价格位于区间内部的时， $\sqrt{P_{lower}}$ 其实就是当前市场价格，然后将公式展开：
+当市场价格位于区间内部的时， $\sqrt{P_{lower}}$ 其实就是当前市场价格，然后将公式展开：
 
 $$
 \Delta x = \frac{L \cdot (\sqrt{P_{lower}} - \sqrt{P_{upper}})}{\sqrt{P_{lower}} \cdot \sqrt{P_{upper}}}
@@ -460,7 +460,7 @@ $$
 \Delta y = L(\sqrt{P_{upper}} - \sqrt{P_{lower}})
 $$
 
-    当市场价格位于区间内部的时，$\sqrt{P_{upper}}$其实就是当前市场价格，下面的函数就是对这个公式的实现：
+当市场价格位于区间内部的时， $\sqrt{P_{upper}}$ 其实就是当前市场价格，下面的函数就是对这个公式的实现：
 
 ```solidity
     function getAmount1Delta(
