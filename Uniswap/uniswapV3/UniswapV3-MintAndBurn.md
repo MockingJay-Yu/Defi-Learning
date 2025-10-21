@@ -293,7 +293,7 @@ function _modifyPosition(ModifyPositionParams memory params)
 
 #### 1.Solt0
 
-`Solt0`是`UniswapV3Pool`中定义的一个结构体，也是每个池子合约第一个 solt 中存储的池子全局状态的信息。我们这里主要用到了`sqrtPriceX96`,`tick`,其他的会在其他章节学习。
+`Solt0`是`UniswapV3Pool`中定义的一个结构体，也是每个池子合约第一个 solt 中存储的池子全局状态的信息。我们这里主要用到了`sqrtPriceX96`,`tick`
 
 ```solidity
 struct Slot0 {
@@ -388,7 +388,7 @@ function _updatePosition(
 
 #### 3.根据当前价格与 tick 区间的关系分三种情况计算 token 数量
 
-这段逻辑就是上面分析的那三种数学模型，根据当前价格所处位置，在给定流动性 $L$,价格区间$[tickLower, tickUpper]$计算所需的 token 数量，`SqrtPriceMath`是 uniswapV3 底层的数学库，我们具体来看`SqrtPriceMath.getAmount0Delta`,`SqrtPriceMath.getAmount0Delta`的源码。
+这段逻辑就是上面分析的那三种数学模型，根据当前价格所处位置，在给定流动性 $L$ ,价格区间 $[tickLower, tickUpper]$ 计算所需的 token 数量，`SqrtPriceMath`是 uniswapV3 底层的数学库，我们具体来看`SqrtPriceMath.getAmount0Delta`,`SqrtPriceMath.getAmount0Delta`的源码。
 
 ```solidity
     function getAmount0Delta(
@@ -416,19 +416,19 @@ function _updatePosition(
 
 这两个函数分别处理了两种 token 在添加和移除流动性时需要 LP 支付或给 LP 支付的 token 数量，下面我们看看它的下层函数是具体怎么实现的。
 
-- 计算$\Delta x$
+- 计算 $\Delta x$
 
-  $$
-    \Delta x = L(\frac{1}{\sqrt{P_{lower}}} - \frac{1}{\sqrt{P_{upper}}})
-  $$
+$$
+\Delta x = L(\frac{1}{\sqrt{P_{lower}}} - \frac{1}{\sqrt{P_{upper}}})
+$$
 
-  当市场价格位于区间内部的时，$\sqrt{P_{lower}}$其实就是当前市场价格，然后将公式展开：
+    当市场价格位于区间内部的时， $\sqrt{P_{lower}}$ 其实就是当前市场价格，然后将公式展开：
 
-  $$
-  \Delta x = \frac{L \cdot (\sqrt{P_{lower}} - \sqrt{P_{upper}})}{\sqrt{P_{lower}} \cdot \sqrt{P_{upper}}}
-  $$
+$$
+\Delta x = \frac{L \cdot (\sqrt{P_{lower}} - \sqrt{P_{upper}})}{\sqrt{P_{lower}} \cdot \sqrt{P_{upper}}}
+$$
 
-  下面的函数就是对这个公式的实现：
+下面的函数就是对这个公式的实现：
 
 ```solidity
 function getAmount0Delta(
@@ -454,13 +454,13 @@ function getAmount0Delta(
     }
 ```
 
-- 计算$\Delta y$
+- 计算 $\Delta y$
 
 $$
 \Delta y = L(\sqrt{P_{upper}} - \sqrt{P_{lower}})
 $$
 
-当市场价格位于区间内部的时，$\sqrt{P_{upper}}$其实就是当前市场价格，下面的函数就是对这个公式的实现：
+    当市场价格位于区间内部的时，$\sqrt{P_{upper}}$其实就是当前市场价格，下面的函数就是对这个公式的实现：
 
 ```solidity
     function getAmount1Delta(
