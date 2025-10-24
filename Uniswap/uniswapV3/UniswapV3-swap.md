@@ -85,7 +85,7 @@ function swap(
 
 - recipient：交易接收地址
 - zeroForOne：交易方向，`true`表示 token0 -> token1,`false`表示 token1 -> token0
-- amountSpecified：指定交易数量，$>0$表示指定输入，$<0$表示指定输出
+- amountSpecified：指定交易数量， $>0$ 表示指定输入， $<0$ 表示指定输出
 - sqrtPriceLimitX96：交易设置的滑点，合约不会把价格推进超过这个值
 - data：传递给回调`uniswapV3SwapCallback`的字节
 
