@@ -151,7 +151,7 @@ SwapState memory state =
 
 - amountSpecifiedRemaining：剩余待处理的交易数量（输入 or 输出）。随着循环一步步推进会减少
 - amountCalculated：已经计算出的对手 token 的累计数量。最终会作为 swap 的结果返回。
-- sqrtPriceX96：当前市场$\sqrt{P}$的定点数
+- sqrtPriceX96：当前市场 $\sqrt{P}$ 的定点数
 - tick：当前 tick，随着跨越 tick 更新
 - feeGrowthGlobalX128：当前交易方向对应的全局每单位流动性产生的累计手续费，如果是 token0 -> token1，取`feeGrowthGlobal0X128`，如果是 token1 -> token0，取`feeGrowthGlobal1X128`
 - protocolFee：本次 swap 累计产生的协议费用
